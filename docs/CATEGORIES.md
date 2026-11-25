@@ -281,6 +281,24 @@ cd app
 flutter test --dart-define=SHOPBANDIT_TEST_URL=http://127.0.0.1:18101
 ```
 
+## Rate-Limits bei Integrationstests
+
+Smoke-Test und Kategorien-Test müssen auf getrennten frischen PocketBase-
+Instanzen mit jeweils eigener Testdatenbank laufen. Die Produktionsregel für
+`/api/shopbandit/invites/` zählt zehn Requests pro IP/60 Sekunden über alle
+Einladungsoperationen und Benutzer hinweg. Der Smoke-Test verwendet neun davon,
+die Kategorien-Suite zwei weitere. Auf einem schnellen CI-Runner verursacht eine
+gemeinsame Instanz dadurch einen korrekten 429 beim letzten Beitrittsrequest.
+
+CI isoliert deshalb Smoke-Test, Kategorien-Suite und die neue Prüfung
+`server/scripts/rate-limit-test.py` jeweils in eigenen Containern. Alle produktiven
+Limits bleiben unverändert aktiv. Der neue Test bestätigt insbesondere, dass der
+elfte Einladungsrequest von derselben IP auch bei einem anderen Benutzer mit
+HTTP 429 abgewiesen wird. Details zur CI-Abfolge stehen in [RELEASE.md](RELEASE.md).
+Ein Kategorien-Test mit `--stale-snapshot-tests` muss seinen ausschließlich für
+Tests vorgesehenen Hook weiterhin separat erhalten; ein gemeinsam verwendeter
+oder bereits mit anderen Tests belasteter Server ist ungeeignet.
+
 ## English update notes
 
 Update the server before the Android app. Back up the complete PocketBase data

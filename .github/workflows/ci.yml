@@ -84,9 +84,7 @@ jobs:
         run: docker build -t shopbandit-server:ci server
       - name: Start PocketBase
         run: |
-          docker run -d --name pb -p 127.0.0.1:8090:8090 \
-            -v "$PWD/server/scripts/test_hooks/stale_categories.pb.js:/pb/pb_hooks/stale_categories.pb.js:ro" \
-            shopbandit-server:ci
+          docker run -d --name pb -p 127.0.0.1:8090:8090 shopbandit-server:ci
           for attempt in $(seq 1 30); do
             echo "PocketBase readiness attempt $attempt/30"
             curl -sf http://127.0.0.1:8090/api/health && break
@@ -95,13 +93,35 @@ jobs:
           curl --fail --silent http://127.0.0.1:8090/api/health
       - name: Integration smoke test
         run: server/scripts/smoke-test.sh http://127.0.0.1:8090
+      - name: Start isolated category test server
+        # Separate process AND database: the smoke suite already uses 9/10
+        # invitation requests per IP/60s. Keep production limits unchanged.
+        run: |
+          docker run -d --name pb-category -p 127.0.0.1:8091:8090 \
+            -v "$PWD/server/scripts/test_hooks/stale_categories.pb.js:/pb/pb_hooks/stale_categories.pb.js:ro" \
+            shopbandit-server:ci
+          for attempt in $(seq 1 30); do
+            echo "Category server readiness attempt $attempt/30"
+            curl -sf http://127.0.0.1:8091/api/health && break
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8091/api/health
       - name: Category API and household isolation tests
-        run: python3 server/scripts/category-test.py http://127.0.0.1:8090 --stale-snapshot-tests
+        run: python3 server/scripts/category-test.py http://127.0.0.1:8091 --stale-snapshot-tests
+      - name: Production rate-limit enforcement on isolated server
+        run: |
+          docker run -d --name pb-rate -p 127.0.0.1:8092:8090 shopbandit-server:ci
+          python3 server/scripts/rate-limit-test.py http://127.0.0.1:8092
       - name: Filled v1 database copy upgrade and restart
         run: python3 server/scripts/test-category-upgrade.py --image shopbandit-server:ci
       - name: Logs
         if: failure()
-        run: docker logs pb
+        run: |
+          for container in pb pb-category pb-rate; do
+            if docker inspect "$container" >/dev/null 2>&1; then
+              docker logs "$container"
+            fi
+          done
       - name: Stop disposable server
         if: always()
-        run: docker rm -f pb || true
+        run: docker rm -fv pb pb-category pb-rate || true

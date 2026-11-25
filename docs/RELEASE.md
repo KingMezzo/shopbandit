@@ -46,6 +46,16 @@ nicht mit demselben Tag überschreiben; für weitere Tests eine neue Nummer verw
 - Separater Serverjob: bestehender Smoke-Test, Kategorien-API, Haushaltstrennung,
   Löschschutz, parallele Änderungen sowie Migration einer Kopie einer gefüllten
   v1-Testdatenbank und anschließender Neustart.
+- Innerhalb dieses Jobs bekommen Smoke-Test (`pb`, Port 8090), Kategorien-API
+  (`pb-category`, Port 8091) und Rate-Limit-Prüfung (`pb-rate`, Port 8092)
+  jeweils einen eigenen frischen PocketBase-Prozess mit eigener Wegwerfdatenbank.
+  Nur der Kategorienserver erhält den read-only gemounteten Snapshot-Test-Hook.
+  Alle drei verwenden dieselben aktiven, unveränderten Produktionslimits.
+- `server/scripts/rate-limit-test.py` prüft auf seiner eigenen Instanz die
+  Gast-Erstellung (2/5 s), Anmeldung (2/3 s), deren normale Erholung nach Ablauf
+  des Fensters und den gemeinsamen Einladungs-Präfix (10/60 s) über zwei Benutzer.
+  Der elfte Einladungsrequest muss HTTP 429 liefern. Kein Limit wird zurückgesetzt
+  oder heraufgesetzt und abgewiesene Schreibvorgänge werden nicht wiederholt.
 - Healthchecks lassen den Job bei nicht bereitem PocketBase fehlschlagen.
   Testserver binden ausschließlich an localhost und werden am Ende entfernt.
 - PR-Server-Builds und veröffentlichte Images verwenden
@@ -53,6 +63,32 @@ nicht mit demselben Tag überschreiben; für weitere Tests eine neue Nummer verw
 
 CI erzeugt das kurzlebige Actions-Artefakt `debug-apk` (7 Tage), kein GitHub
 Release. Keine der Tests benötigt Produktionsdaten oder Produktions-Zugangsdaten.
+
+### Warum die Server-Suiten getrennte Instanzen brauchen
+
+Die Regel `/api/shopbandit/invites/` erlaubt insgesamt zehn Requests je IP in
+60 Sekunden, gemeinsam für `create`, `check`, `accept` und `revoke`. Auch später
+fachlich abgelehnte Requests zählen. Neue Testbenutzer erhalten keinen eigenen
+IP-Zähler. Der Smoke-Test erzeugt neun solche Requests; die Kategorien-Suite
+weitere zwei. Bei gemeinsamer Instanz kann deren abschließender Beitritt damit
+als elfter Request korrekt HTTP 429 liefern. Das wurde mit der alten CI-Abfolge
+und derselben Client-IP reproduziert; der Kategorie-/Berechtigungstest selbst
+war dabei nicht die Ursache.
+
+Frische Prozesse und Datenbanken isolieren die Tests voneinander, ohne das
+produktive Verhalten zu ändern. Ein zusätzliches CI-Rate-Limit-Profil ist nicht
+nötig. Die Produktions-Hooks, Einstellungen und Docker-Konfiguration bleiben
+unverändert. Der API-Test meldet bei unerwartetem 429 zusätzlich seine Request-
+Zähler und einen Hinweis auf notwendige Isolation. Er akzeptiert 429 weiterhin
+nicht als Ersatz für den erwarteten Erfolg oder Berechtigungsfehler.
+
+Die frühere Kombination auf einer gemeinsamen Instanz wurde lokal mit genau
+dem 429 beim abschließenden `invites/accept` reproduziert. Anschließend bestanden
+drei komplette Server-Durchläufe in der neuen isolierten Abfolge: Smoke-Test,
+Kategorien mit `--stale-snapshot-tests` und jeweils zwölf Konfliktrunden,
+Rate-Limit-Prüfung und Datenbankkopie-/Upgrade-/Neustarttest. Die Kategorien-Suite
+erzeugt dabei 159 API-Requests ohne Healthchecks, davon nur zwei im Einladungs-
+Präfix. Die Produktions-Rate-Limit-Konfiguration wurde nicht verändert.
 
 ## Secrets für Android-Signierung
 

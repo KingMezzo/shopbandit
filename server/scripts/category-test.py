@@ -4,13 +4,17 @@
 python server/scripts/category-test.py http://127.0.0.1:18090
 --prepare-legacy FILE writes old-schema fixtures for the upgrade/copy test.
 --verify-legacy FILE checks the same records after the additive migration.
+Always use a fresh server process/database, separate from smoke-test.sh, so
+the suites do not share the production invitation-prefix limit per client IP.
 """
 import argparse
 import concurrent.futures
+from collections import Counter
 import hashlib
 import json
 import pathlib
 import time
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -37,7 +41,15 @@ else:
     raise RuntimeError('Disposable test server did not become healthy')
 
 
+request_counts = Counter()
+request_count_lock = threading.Lock()
+
+
 def req(method, path, body=None, token='', expected=200):
+    with request_count_lock:
+        request_counts['total'] += 1
+        if path.startswith('shopbandit/invites/'):
+            request_counts['invitations'] += 1
     headers = {'Content-Type': 'application/json'}
     if token:
         headers['Authorization'] = token
@@ -48,6 +60,11 @@ def req(method, path, body=None, token='', expected=200):
     except urllib.error.HTTPError as error:
         status, raw = error.code, error.read()
     value = json.loads(raw) if raw else {}
+    if status == 429:
+        with request_count_lock:
+            counts = dict(request_counts)
+        raise AssertionError((method, path, status, value, counts,
+                              'Use a fresh isolated server for this suite; do not share rate-limit buckets with smoke tests.'))
     if isinstance(expected, int):
         assert status == expected, (method, path, status, value)
     else:
@@ -222,4 +239,5 @@ auth = req('POST', 'collections/users/auth-refresh', {}, other_token)
 assert auth['record']['household'] == hid
 assert req('GET', path('categories'), token=auth['token'])['totalItems'] == 13 + extra_categories
 ok('household join/cascade and shared categories')
-print('ALL CATEGORY API TESTS PASSED')
+print(f'ALL CATEGORY API TESTS PASSED ({request_counts["total"]} API requests excluding health checks, '
+      f'{request_counts["invitations"]} invitation-prefix requests)')
