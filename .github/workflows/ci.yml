@@ -84,7 +84,9 @@ jobs:
         run: docker build -t shopbandit-server:ci server
       - name: Start PocketBase
         run: |
-          docker run -d --name pb -p 127.0.0.1:8090:8090 shopbandit-server:ci
+          docker run -d --name pb -p 127.0.0.1:8090:8090 \
+            -v "$PWD/server/scripts/test_hooks/stale_categories.pb.js:/pb/pb_hooks/stale_categories.pb.js:ro" \
+            shopbandit-server:ci
           for attempt in $(seq 1 30); do
             echo "PocketBase readiness attempt $attempt/30"
             curl -sf http://127.0.0.1:8090/api/health && break
@@ -94,7 +96,7 @@ jobs:
       - name: Integration smoke test
         run: server/scripts/smoke-test.sh http://127.0.0.1:8090
       - name: Category API and household isolation tests
-        run: python3 server/scripts/category-test.py http://127.0.0.1:8090
+        run: python3 server/scripts/category-test.py http://127.0.0.1:8090 --stale-snapshot-tests
       - name: Filled v1 database copy upgrade and restart
         run: python3 server/scripts/test-category-upgrade.py --image shopbandit-server:ci
       - name: Logs

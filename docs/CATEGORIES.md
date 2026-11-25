@@ -229,6 +229,58 @@ Der Test mit ihrer tatsächlichen Kopie ist deshalb der oben dokumentierte
 Schritt vor dem produktiven Update. Ein physischer Android-/Push-End-to-End-Test
 auf zwei Geräten bleibt zusätzlich zur automatischen Prüfung sinnvoll.
 
+## Korrektur paralleler Soft-Deletes
+
+PocketBase 0.40.5 lädt einen PATCH-Datensatz vor dem Modell-Hook und schreibt
+beim Speichern dessen Felder zurück. `record.original()` ist der eingelesene
+Snapshot dieses Requests. Es liest den aktuellen Datenbankstand nicht erneut.
+Eine bereits geladene Umbenennung konnte deshalb nach einem anderen Löschrequest
+noch `deleted=false` aus ihrem alten Snapshot zurückschreiben. Die Transaktion
+allein verhinderte diesen verlorenen Löschstatus nicht.
+
+`prepareCategoryUpdate` liest die aktuelle Kategorie innerhalb der bestehenden
+Schreibtransaktion erneut ein. Unveränderte Felder werden aus diesem aktuellen
+Stand übernommen; eine gespeicherte Löschmarkierung bleibt dauerhaft gesetzt.
+Bewusste Wiederherstellungen einer bereits als gelöscht eingelesenen Kategorie
+bleiben abgewiesen. Die bestehenden Identitäts-, Standardkategorie- und
+Haushaltsprüfungen bleiben erhalten. Produktänderungen übernehmen ebenfalls
+den aktuellen Kategoriestand, wenn sie diese Felder nicht ändern, und können
+eine inzwischen manuelle Zuordnung nicht auf einen alten automatischen Stand
+zurücksetzen. Die Umstellung auf Sonstiges ist immer als manuell geschützt.
+
+Die ursprüngliche Assertion war fachlich richtig. Ein einzelner paralleler
+Test traf lediglich nicht zuverlässig die fehlerhafte Reihenfolge. Die API-Suite
+prüft jetzt zwölf Konkurrenzrunden mit Umbenennen, Sortieren, Löschen und
+Produktzuordnung. Zusätzlich reproduziert ein Test-Hook exakt die Reihenfolge
+„Snapshot laden → anderes Update/Löschen speichern → alten Snapshot speichern“.
+Er prüft auch den Erhalt unabhängiger Felder und manueller Produktzuordnungen.
+
+Der Fehler wurde zunächst gegen das unveränderte Image deterministisch
+nachgewiesen. Nach der Korrektur bestanden drei vollständige API-Läufe mit je
+zwölf parallelen Konfliktrunden und Haushaltstrennung, drei vollständige
+Flutter-Läufe mit je 49 Tests (einschließlich echter PocketBase-Realtime-
+Synchronisierung und Drift-Migration) sowie drei Kopie-/Upgrade-/Neustartläufe
+der PocketBase-Altdatenmigration. Flutter-Analyse und actionlint/ShellCheck
+blieben ohne Befunde. Die Prüfungen verwenden ausschließlich separate Testdaten.
+
+Die Datei `server/scripts/test_hooks/stale_categories.pb.js` liegt bewusst
+außerhalb der produktiven Hooks. CI mountet sie ausschließlich read-only in
+seinen separaten Testcontainer und ruft die API-Suite mit
+`--stale-snapshot-tests` auf. Sie wird nicht ins Docker-Image kopiert. Bestehende
+API-Assertions bleiben erhalten; es gibt keine neue produktive Test-Route und
+keine abgeschwächten Berechtigungen. Für lokale Reproduktion:
+
+```sh
+docker build -t shopbandit-race:fixed server
+docker run -d --name shopbandit-race-test -p 127.0.0.1:18101:8090 \
+  -v "$PWD/server/scripts/test_hooks/stale_categories.pb.js:/pb/pb_hooks/stale_categories.pb.js:ro" \
+  shopbandit-race:fixed
+python3 server/scripts/category-test.py http://127.0.0.1:18101 --stale-snapshot-tests
+python3 server/scripts/test-category-upgrade.py --image shopbandit-race:fixed
+cd app
+flutter test --dart-define=SHOPBANDIT_TEST_URL=http://127.0.0.1:18101
+```
+
 ## English update notes
 
 Update the server before the Android app. Back up the complete PocketBase data

@@ -18,7 +18,7 @@ onRecordUpdate((e) => {
   const originalApp = e.app
   try { originalApp.runInTransaction((tx) => {
     e.app = tx
-    require(`${__hooks}/categories.js`).validateCategory(tx, e.record)
+    require(`${__hooks}/categories.js`).prepareCategoryUpdate(tx, e.record)
     // Move products before the tombstone, atomically with the category update.
     require(`${__hooks}/categories.js`).reassignDeleted(tx, e.record)
     e.next()

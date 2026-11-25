@@ -20,6 +20,9 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('url')
 parser.add_argument('--prepare-legacy', type=pathlib.Path)
 parser.add_argument('--verify-legacy', type=pathlib.Path)
+parser.add_argument('--stale-snapshot-tests', action='store_true',
+                    help='Requires the test-only stale_categories.pb.js fixture mounted in the disposable server')
+parser.add_argument('--race-rounds', type=int, default=12)
 args = parser.parse_args()
 assert urllib.parse.urlparse(args.url).hostname in ('localhost', '127.0.0.1'), 'Disposable localhost server required'
 
@@ -147,21 +150,59 @@ new = req('PATCH', path('catalog_items', milk['id']), {'category': custom['id'],
 assert new['category'] == cid(hid, 'other')
 ok('atomic delete/reassignment, stale rename and offline assignment cannot resurrect')
 
-race = req('POST', 'collections/categories/records', {
-    'household': hid, 'key': 'race_' + uuid.uuid4().hex, 'name': 'Parallel',
-}, token)
-with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-    actions = [
-        (path('categories', race['id']), {'name': 'Parallel rename'}),
-        (path('categories', race['id']), {'deleted': True}),
-        (path('catalog_items', milk['id']), {'category': race['id'], 'category_manual': True}),
-    ]
-    futures = [executor.submit(req, 'PATCH', endpoint, body, token) for endpoint, body in actions]
-    for future in futures:
-        future.result()
-assert req('GET', path('categories', race['id']), token=token)['deleted']
-assert req('GET', path('catalog_items', milk['id']), token=token)['category'] == cid(hid, 'other')
-ok('concurrent rename/delete/assignment remains atomic and orphan-free')
+extra_categories = 0
+if args.stale_snapshot_tests:
+    for operation in ('rename', 'sort', 'restore'):
+        race = req('POST', 'collections/categories/records', {
+            'household': hid, 'key': 'stale_' + uuid.uuid4().hex, 'name': 'Snapshot',
+        }, token)
+        extra_categories += 1
+        req('PATCH', path('catalog_items', milk['id']), {'category': race['id'], 'category_manual': True}, token)
+        result = req('POST', 'shopbandit-test/stale-category', {'id': race['id'], 'operation': operation}, token)
+        assert result['deleted'], ('stale snapshot resurrected category', operation, result)
+        assert req('GET', path('categories', race['id']), token=token)['deleted']
+        assert req('GET', path('catalog_items', milk['id']), token=token)['category'] == cid(hid, 'other')
+    auto = item(token, user, 'Gouda')
+    result = req('POST', 'shopbandit-test/stale-product', {'id': auto['id']}, token)
+    assert result['category'] == cid(hid, 'drinks') and result['category_manual']
+    assert result['purchase_count'] == 1
+    merge = req('POST', 'collections/categories/records', {
+        'household': hid, 'key': 'merge_' + uuid.uuid4().hex, 'name': 'Before merge',
+    }, token)
+    extra_categories += 1
+    result = req('POST', 'shopbandit-test/stale-category', {'id': merge['id'], 'operation': 'merge'}, token)
+    assert result['name'] == 'Delayed rename' and result['sort_order'] == 777, result
+    assert result['icon'] == 'eco' and result['color'] == 'green' and not result['deleted']
+    auto = item(token, user, 'Automatischer Testartikel', category=merge['id'], category_manual=False, category_version=1)
+    result = req('POST', 'shopbandit-test/stale-product', {'id': auto['id'], 'operation': 'delete'}, token)
+    assert result['category'] == cid(hid, 'other') and result['category_manual']
+    assert result['purchase_count'] == 1
+    ok('deterministic snapshots: rename/sort/restore, field merge, manual category and deletion during purchase')
+
+assert 1 <= args.race_rounds <= 50
+for round_number in range(args.race_rounds):
+    # Respect the existing 300 requests/10s limit; never turn rate limiting off.
+    if round_number and round_number % 4 == 0:
+        time.sleep(10.1)
+    race = req('POST', 'collections/categories/records', {
+        'household': hid, 'key': 'race_' + uuid.uuid4().hex, 'name': 'Parallel',
+    }, token)
+    extra_categories += 1
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        actions = [
+            (path('categories', race['id']), {'name': 'Parallel rename'}),
+            (path('categories', race['id']), {'sort_order': round_number}),
+            (path('categories', race['id']), {'deleted': True}),
+            (path('catalog_items', milk['id']), {'category': race['id'], 'category_manual': True}),
+        ]
+        futures = [executor.submit(req, 'PATCH', endpoint, body, token) for endpoint, body in actions]
+        for future in futures:
+            future.result()
+    result = req('GET', path('categories', race['id']), token=token)
+    assert result['deleted'], ('concurrent update resurrected category', round_number, result)
+    product = req('GET', path('catalog_items', milk['id']), token=token)
+    assert product['category'] == cid(hid, 'other') and product['category_manual']
+ok(f'{args.race_rounds} concurrent rename/sort/delete/assignment rounds remain atomic and orphan-free')
 
 time.sleep(3.1)
 other_token, other_user = signup()
@@ -179,6 +220,6 @@ invite = req('POST', 'shopbandit/invites/create', {}, token)
 req('POST', 'shopbandit/invites/accept', {'token': invite['token']}, other_token)
 auth = req('POST', 'collections/users/auth-refresh', {}, other_token)
 assert auth['record']['household'] == hid
-assert req('GET', path('categories'), token=auth['token'])['totalItems'] == 14
+assert req('GET', path('categories'), token=auth['token'])['totalItems'] == 13 + extra_categories
 ok('household join/cascade and shared categories')
 print('ALL CATEGORY API TESTS PASSED')

@@ -53,12 +53,32 @@ function validateCategory(app, record) {
   }
 }
 
+// PocketBase loads PATCH records before our write transaction and saves all
+// fields. original() is that request's snapshot, NOT the current SQL row.
+// Merge only changed fields onto the row read while holding the writer lock.
+function prepareCategoryUpdate(app, record) {
+  validateCategory(app, record)
+  const snapshot = record.original()
+  const current = app.findRecordById('categories', record.id)
+  for (const field of ['name', 'sort_order', 'icon', 'color']) {
+    if (record.get(field) === snapshot.get(field)) record.set(field, current.get(field))
+  }
+  // An update based on an active snapshot may arrive after a deletion. Retain
+  // the tombstone even if that old snapshot explicitly contained deleted=false.
+  // Explicit restores based on a deleted snapshot are still rejected above.
+  if (current.getBool('deleted')) record.set('deleted', true)
+}
+
 function prepareCatalog(app, record) {
   const hid = record.getString('household')
   ensureDefaults(app, hid)
-  const original = record.original()
-  if (!record.isNew() && original.getBool('category_manual') && !record.getBool('category_manual')) {
-    record.set('category', original.getString('category'))
+  const snapshot = record.original()
+  const current = record.isNew() ? null : app.findRecordById('catalog_items', record.id)
+  if (current && ['category', 'category_manual', 'category_version'].every((field) => record.get(field) === snapshot.get(field))) {
+    for (const field of ['category', 'category_manual', 'category_version']) record.set(field, current.get(field))
+  }
+  if (current && current.getBool('category_manual') && !record.getBool('category_manual')) {
+    record.set('category', current.getString('category'))
     record.set('category_manual', true)
   }
   if (!record.getString('category') || (!record.getBool('category_manual') && record.getInt('category_version') < 1)) {
@@ -66,7 +86,10 @@ function prepareCatalog(app, record) {
   }
   const c = app.findRecordById('categories', record.getString('category'))
   if (c.getString('household') !== hid) throw new BadRequestError('category_foreign_household')
-  if (c.getBool('deleted')) record.set('category', categoryId(hid, 'other'))
+  if (c.getBool('deleted')) {
+    record.set('category', categoryId(hid, 'other'))
+    record.set('category_manual', true)
+  }
   record.set('category_version', 1)
 }
 
@@ -82,4 +105,4 @@ function reassignDeleted(app, record) {
   }
 }
 
-module.exports = { categoryId, classify, ensureDefaults, validateCategory, prepareCatalog, reassignDeleted }
+module.exports = { categoryId, classify, ensureDefaults, validateCategory, prepareCategoryUpdate, prepareCatalog, reassignDeleted }
