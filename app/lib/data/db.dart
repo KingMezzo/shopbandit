@@ -12,6 +12,9 @@ class CatalogItems extends Table {
   IntColumn get purchaseCount => integer().withDefault(const Constant(0))();
   DateTimeColumn get lastPurchased => dateTime().nullable()();
   BoolColumn get deleted => boolean().withDefault(const Constant(false))();
+  TextColumn get category => text().withDefault(const Constant(''))();
+  BoolColumn get categoryManual => boolean().withDefault(const Constant(false))();
+  IntColumn get categoryVersion => integer().withDefault(const Constant(0))();
 
   /// Server `updated` (PocketBase date string), empty until first sync.
   TextColumn get updated => text().withDefault(const Constant(''))();
@@ -71,27 +74,59 @@ class Meta extends Table {
   Set<Column<Object>> get primaryKey => {key};
 }
 
-@DriftDatabase(tables: [CatalogItems, ListEntries, Members, Outbox, Meta])
-class AppDatabase extends _$AppDatabase {
-  AppDatabase([QueryExecutor? executor])
-      : super(executor ?? driftDatabase(name: 'shopbandit'));
+class Categories extends Table {
+  TextColumn get id => text()();
+  TextColumn get household => text()();
+  TextColumn get key => text()();
+  TextColumn get name => text().withDefault(const Constant(''))();
+  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  TextColumn get icon => text().withDefault(const Constant('category'))();
+  TextColumn get color => text().withDefault(const Constant(''))();
+  BoolColumn get deleted => boolean().withDefault(const Constant(false))();
+  TextColumn get updated => text().withDefault(const Constant(''))();
 
   @override
-  int get schemaVersion => 1;
+  Set<Column<Object>> get primaryKey => {id};
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+    {household, key},
+  ];
+}
+
+@DriftDatabase(tables: [CatalogItems, ListEntries, Members, Outbox, Meta, Categories])
+class AppDatabase extends _$AppDatabase {
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? driftDatabase(name: 'shopbandit'));
+
+  @override
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(categories);
+        await m.addColumn(catalogItems, catalogItems.category);
+        await m.addColumn(catalogItems, catalogItems.categoryManual);
+        await m.addColumn(catalogItems, catalogItems.categoryVersion);
+      }
+    },
+  );
 
   Future<String?> getMeta(String key) async =>
-      (await (select(meta)..where((m) => m.key.equals(key))).getSingleOrNull())
-          ?.value;
+      (await (select(meta)..where((m) => m.key.equals(key))).getSingleOrNull())?.value;
 
   Future<void> setMeta(String key, String value) =>
       into(meta).insertOnConflictUpdate(MetaCompanion.insert(key: key, value: value));
 
   /// Drops all household data (used on logout and household switch).
   Future<void> clearAll() => transaction(() async {
-        for (final t in allTables) {
-          await delete(t).go();
-        }
-      });
+    for (final t in allTables) {
+      await delete(t).go();
+    }
+  });
 
   Future<int> pendingCount() async {
     final c = outbox.seq.count();
@@ -100,11 +135,8 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<int> watchPendingCount() {
     final c = outbox.seq.count();
-    return (selectOnly(outbox)..addColumns([c]))
-        .watchSingle()
-        .map((r) => r.read(c) ?? 0);
+    return (selectOnly(outbox)..addColumns([c])).watchSingle().map((r) => r.read(c) ?? 0);
   }
 
-  Future<Set<String>> pendingRecordIds() async =>
-      (await select(outbox).get()).map((o) => o.recordId).toSet();
+  Future<Set<String>> pendingRecordIds() async => (await select(outbox).get()).map((o) => o.recordId).toSet();
 }

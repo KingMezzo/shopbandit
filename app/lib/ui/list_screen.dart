@@ -11,6 +11,7 @@ import '../data/repository.dart';
 import '../providers.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'category_widgets.dart';
 
 class ListScreen extends ConsumerWidget {
   const ListScreen({super.key});
@@ -21,6 +22,14 @@ class ListScreen extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
     final rows = ref.watch(listProvider).value ?? const <ListRow>[];
     final catalog = ref.watch(catalogProvider).value ?? const <CatalogItem>[];
+    final categories = ref.watch(categoriesProvider).value ?? const <Category>[];
+    final groups = <String, List<ListRow>>{};
+    final other = categories.where((c) => c.key == 'other').firstOrNull;
+    final known = categories.map((c) => c.id).toSet();
+    for (final row in rows) {
+      final id = known.contains(row.item.category) ? row.item.category : other?.id ?? '';
+      (groups[id] ??= []).add(row);
+    }
     final onList = rows.map((r) => r.item.id).toSet();
     final frequent = ShopRepository.frequent(catalog, onList, DateTime.now());
 
@@ -60,10 +69,15 @@ class ListScreen extends ConsumerWidget {
                   child: Text(t.listCount(rows.length), style: Theme.of(context).textTheme.titleSmall),
                 ),
               ),
-              SliverList.builder(
-                itemCount: rows.length,
-                itemBuilder: (context, i) => _EntryTile(key: ValueKey(rows[i].entry.id), row: rows[i]),
-              ),
+              for (final category in categories)
+                if (groups[category.id]?.isNotEmpty ?? false)
+                  SliverToBoxAdapter(
+                    child: _CategoryGroup(key: ValueKey(category.id), category: category, rows: groups[category.id]!),
+                  ),
+              if (groups['']?.isNotEmpty ?? false)
+                SliverList.list(
+                  children: [for (final row in groups['']!) _EntryTile(key: ValueKey(row.entry.id), row: row)],
+                ),
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],
           ],
@@ -71,6 +85,25 @@ class ListScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _CategoryGroup extends StatelessWidget {
+  const _CategoryGroup({super.key, required this.category, required this.rows});
+  final Category category;
+  final List<ListRow> rows;
+
+  @override
+  Widget build(BuildContext context) => ExpansionTile(
+    key: PageStorageKey('category-${category.id}'),
+    initiallyExpanded: true,
+    shape: const Border(),
+    collapsedShape: const Border(),
+    tilePadding: const EdgeInsets.symmetric(horizontal: 20),
+    leading: CategoryBadge(category: category),
+    title: Text(categoryName(category, context.t), style: Theme.of(context).textTheme.titleSmall),
+    subtitle: Text(context.t.listCount(rows.length)),
+    children: [for (final row in rows) _EntryTile(key: ValueKey(row.entry.id), row: row)],
+  );
 }
 
 /// Item input with autocomplete from the catalog + optional quantity.
@@ -146,8 +179,7 @@ class _AddBarState extends ConsumerState<_AddBar> {
                       padding: const EdgeInsets.symmetric(vertical: 6),
                       shrinkWrap: true,
                       children: [
-                        for (final o in options)
-                          ListTile(dense: true, title: Text(o.name), onTap: () => onSelected(o)),
+                        for (final o in options) ListTile(dense: true, title: Text(o.name), onTap: () => onSelected(o)),
                       ],
                     ),
                   ),
@@ -254,12 +286,14 @@ class _EntryTileState extends ConsumerState<_EntryTile> {
     await repo.check(row);
     messenger
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        // with an action Flutter keeps the snack bar until tapped otherwise
-        persist: false,
-        content: Text(t.checkedOff(row.item.name)),
-        action: SnackBarAction(label: t.undo, onPressed: () => repo.check(row, undo: true)),
-      ));
+      ..showSnackBar(
+        SnackBar(
+          // with an action Flutter keeps the snack bar until tapped otherwise
+          persist: false,
+          content: Text(t.checkedOff(row.item.name)),
+          action: SnackBarAction(label: t.undo, onPressed: () => repo.check(row, undo: true)),
+        ),
+      );
   }
 
   Future<void> _delete() async {
@@ -272,35 +306,26 @@ class _EntryTileState extends ConsumerState<_EntryTile> {
     await repo.deleteEntry(row.entry.id);
     messenger
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        // with an action Flutter keeps the snack bar until tapped otherwise
-        persist: false,
-        content: Text(t.deleted(row.item.name)),
-        action: SnackBarAction(label: t.undo, onPressed: () => repo.deleteEntry(row.entry.id, undo: true)),
-      ));
+      ..showSnackBar(
+        SnackBar(
+          // with an action Flutter keeps the snack bar until tapped otherwise
+          persist: false,
+          content: Text(t.deleted(row.item.name)),
+          action: SnackBarAction(label: t.undo, onPressed: () => repo.deleteEntry(row.entry.id, undo: true)),
+        ),
+      );
   }
 
   Future<void> _editQuantity() async {
-    final t = context.t;
-    final controller = TextEditingController(text: widget.row.entry.quantity);
+    final repo = ref.read(sessionProvider).repo;
+    final entryId = widget.row.entry.id;
+    final item = widget.row.item;
+    final quantity = widget.row.entry.quantity;
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(widget.row.item.name),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(labelText: t.quantity, hintText: t.quantityExample),
-          onSubmitted: (v) => Navigator.pop(context, v),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: Text(t.save)),
-        ],
-      ),
+      builder: (context) => ProductEditDialog(item: item, quantity: quantity),
     );
-    controller.dispose();
-    if (result != null) await ref.read(sessionProvider).repo?.updateQuantity(widget.row.entry.id, result);
+    if (result != null) await repo?.updateQuantity(entryId, result);
   }
 
   @override
@@ -345,7 +370,12 @@ class _EntryTileState extends ConsumerState<_EntryTile> {
                   transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
                   child: _checking
                       ? Icon(Icons.check_circle, key: const ValueKey('on'), color: shop.success, size: 28)
-                      : Icon(Icons.radio_button_unchecked, key: const ValueKey('off'), color: theme.colorScheme.outline, size: 28),
+                      : Icon(
+                          Icons.radio_button_unchecked,
+                          key: const ValueKey('off'),
+                          color: theme.colorScheme.outline,
+                          size: 28,
+                        ),
                 ),
               ),
               title: Text(row.item.name, style: theme.textTheme.titleMedium),

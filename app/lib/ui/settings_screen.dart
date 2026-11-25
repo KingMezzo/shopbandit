@@ -4,9 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../core/constants.dart';
 import '../providers.dart';
+import '../core/items.dart';
+import '../data/db.dart';
 import '../push/push_service.dart';
 import 'household_screen.dart' show confirm;
 import 'widgets.dart';
+import 'category_widgets.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -136,6 +139,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             subtitle: Text(t.manageCatalogHint),
             onTap: () => context.push('/settings/catalog'),
           ),
+          ListTile(
+            leading: const Icon(Icons.category_outlined),
+            title: Text(t.manageCategories),
+            subtitle: Text(t.manageCategoriesHint),
+            onTap: () => context.push('/settings/categories'),
+          ),
           _Section(t.language),
           RadioGroup<String>(
             groupValue: locale?.languageCode ?? 'system',
@@ -154,7 +163,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: Text(session.serverUrl ?? ''),
             subtitle: Text(t.changeServerHint),
             onTap: () async {
-              final ok = await confirm(context, title: t.changeServer, message: t.changeServerMessage, action: t.logout);
+              final ok = await confirm(
+                context,
+                title: t.changeServer,
+                message: t.changeServerMessage,
+                action: t.logout,
+              );
               if (!ok) return;
               await PushService.instance.disable();
               await session.logout();
@@ -205,35 +219,96 @@ class _Section extends StatelessWidget {
 }
 
 /// Lists all catalog items; swipe or tap the bin to remove one.
-class CatalogScreen extends ConsumerWidget {
+class CatalogScreen extends ConsumerStatefulWidget {
   const CatalogScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CatalogScreen> createState() => _CatalogScreenState();
+}
+
+class _CatalogScreenState extends ConsumerState<CatalogScreen> {
+  String _query = '';
+  String? _filter;
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
-    final items = ref.watch(catalogProvider).value ?? const [];
+    final all = ref.watch(catalogProvider).value ?? const <CatalogItem>[];
+    final categories = ref.watch(categoriesProvider).value ?? const <Category>[];
+    final byId = {for (final c in categories) c.id: c};
+    final activeFilter = byId.containsKey(_filter) ? _filter : null;
+    final items = all
+        .where(
+          (c) => normalizeItemName(c.name).contains(_query) && (activeFilter == null || c.category == activeFilter),
+        )
+        .toList();
     final repo = ref.watch(sessionProvider.select((s) => s.repo));
     return Scaffold(
       appBar: GradientAppBar(title: Text(t.manageCatalog)),
-      body: items.isEmpty
+      body: all.isEmpty
           ? EmptyState(title: t.catalogEmptyTitle, message: t.catalogEmptyMessage)
-          : ListView.builder(
-              itemCount: items.length,
-              itemBuilder: (context, i) {
-                final c = items[i];
-                return ListTile(
-                  title: Text(c.name),
-                  subtitle: Text(t.boughtTimes(c.purchaseCount)),
-                  trailing: IconButton(
-                    tooltip: t.deleteNamed(c.name),
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () async {
-                      final ok = await confirm(context, title: t.deleteNamed(c.name), message: t.deleteCatalogMessage, action: t.delete);
-                      if (ok) await repo?.deleteCatalogItem(c.id);
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      TextField(
+                        decoration: InputDecoration(labelText: t.searchProducts, prefixIcon: const Icon(Icons.search)),
+                        onChanged: (v) => setState(() => _query = normalizeItemName(v)),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        key: ValueKey(activeFilter),
+                        initialValue: activeFilter ?? '',
+                        isExpanded: true,
+                        decoration: InputDecoration(labelText: t.category),
+                        items: [
+                          DropdownMenuItem(value: '', child: Text(t.allCategories)),
+                          for (final c in categories)
+                            DropdownMenuItem(
+                              value: c.id,
+                              child: Text(categoryName(c, t), overflow: TextOverflow.ellipsis),
+                            ),
+                        ],
+                        onChanged: (v) => setState(() => _filter = v == '' ? null : v),
+                      ),
+                    ],
+                  ),
+                ),
+                if (items.isEmpty) Padding(padding: const EdgeInsets.all(24), child: Text(t.noProductsFound)),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: items.length,
+                    itemBuilder: (context, i) {
+                      final c = items[i];
+                      return ListTile(
+                        title: Text(c.name),
+                        leading: byId[c.category] == null
+                            ? const Icon(Icons.category_outlined)
+                            : CategoryBadge(category: byId[c.category]!),
+                        subtitle: Text(
+                          '${byId[c.category] == null ? t.categoryOther : categoryName(byId[c.category]!, t)} · ${t.boughtTimes(c.purchaseCount)}',
+                        ),
+                        onTap: () => editProductCategory(context, c),
+                        trailing: IconButton(
+                          tooltip: t.deleteNamed(c.name),
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () async {
+                            final ok = await confirm(
+                              context,
+                              title: t.deleteNamed(c.name),
+                              message: t.deleteCatalogMessage,
+                              action: t.delete,
+                            );
+                            if (ok) await repo?.deleteCatalogItem(c.id);
+                          },
+                        ),
+                      );
                     },
                   ),
-                );
-              },
+                ),
+              ],
             ),
     );
   }

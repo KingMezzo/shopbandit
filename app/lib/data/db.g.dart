@@ -88,6 +88,45 @@ class $CatalogItemsTable extends CatalogItems
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _categoryManualMeta = const VerificationMeta(
+    'categoryManual',
+  );
+  @override
+  late final GeneratedColumn<bool> categoryManual = GeneratedColumn<bool>(
+    'category_manual',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("category_manual" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _categoryVersionMeta = const VerificationMeta(
+    'categoryVersion',
+  );
+  @override
+  late final GeneratedColumn<int> categoryVersion = GeneratedColumn<int>(
+    'category_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _updatedMeta = const VerificationMeta(
     'updated',
   );
@@ -109,6 +148,9 @@ class $CatalogItemsTable extends CatalogItems
     purchaseCount,
     lastPurchased,
     deleted,
+    category,
+    categoryManual,
+    categoryVersion,
     updated,
   ];
   @override
@@ -179,6 +221,30 @@ class $CatalogItemsTable extends CatalogItems
         deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta),
       );
     }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    }
+    if (data.containsKey('category_manual')) {
+      context.handle(
+        _categoryManualMeta,
+        categoryManual.isAcceptableOrUnknown(
+          data['category_manual']!,
+          _categoryManualMeta,
+        ),
+      );
+    }
+    if (data.containsKey('category_version')) {
+      context.handle(
+        _categoryVersionMeta,
+        categoryVersion.isAcceptableOrUnknown(
+          data['category_version']!,
+          _categoryVersionMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated')) {
       context.handle(
         _updatedMeta,
@@ -222,6 +288,18 @@ class $CatalogItemsTable extends CatalogItems
         DriftSqlType.bool,
         data['${effectivePrefix}deleted'],
       )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
+      categoryManual: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}category_manual'],
+      )!,
+      categoryVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}category_version'],
+      )!,
       updated: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}updated'],
@@ -243,6 +321,9 @@ class CatalogItem extends DataClass implements Insertable<CatalogItem> {
   final int purchaseCount;
   final DateTime? lastPurchased;
   final bool deleted;
+  final String category;
+  final bool categoryManual;
+  final int categoryVersion;
 
   /// Server `updated` (PocketBase date string), empty until first sync.
   final String updated;
@@ -254,6 +335,9 @@ class CatalogItem extends DataClass implements Insertable<CatalogItem> {
     required this.purchaseCount,
     this.lastPurchased,
     required this.deleted,
+    required this.category,
+    required this.categoryManual,
+    required this.categoryVersion,
     required this.updated,
   });
   @override
@@ -268,6 +352,9 @@ class CatalogItem extends DataClass implements Insertable<CatalogItem> {
       map['last_purchased'] = Variable<DateTime>(lastPurchased);
     }
     map['deleted'] = Variable<bool>(deleted);
+    map['category'] = Variable<String>(category);
+    map['category_manual'] = Variable<bool>(categoryManual);
+    map['category_version'] = Variable<int>(categoryVersion);
     map['updated'] = Variable<String>(updated);
     return map;
   }
@@ -283,6 +370,9 @@ class CatalogItem extends DataClass implements Insertable<CatalogItem> {
           ? const Value.absent()
           : Value(lastPurchased),
       deleted: Value(deleted),
+      category: Value(category),
+      categoryManual: Value(categoryManual),
+      categoryVersion: Value(categoryVersion),
       updated: Value(updated),
     );
   }
@@ -300,6 +390,9 @@ class CatalogItem extends DataClass implements Insertable<CatalogItem> {
       purchaseCount: serializer.fromJson<int>(json['purchaseCount']),
       lastPurchased: serializer.fromJson<DateTime?>(json['lastPurchased']),
       deleted: serializer.fromJson<bool>(json['deleted']),
+      category: serializer.fromJson<String>(json['category']),
+      categoryManual: serializer.fromJson<bool>(json['categoryManual']),
+      categoryVersion: serializer.fromJson<int>(json['categoryVersion']),
       updated: serializer.fromJson<String>(json['updated']),
     );
   }
@@ -314,6 +407,9 @@ class CatalogItem extends DataClass implements Insertable<CatalogItem> {
       'purchaseCount': serializer.toJson<int>(purchaseCount),
       'lastPurchased': serializer.toJson<DateTime?>(lastPurchased),
       'deleted': serializer.toJson<bool>(deleted),
+      'category': serializer.toJson<String>(category),
+      'categoryManual': serializer.toJson<bool>(categoryManual),
+      'categoryVersion': serializer.toJson<int>(categoryVersion),
       'updated': serializer.toJson<String>(updated),
     };
   }
@@ -326,6 +422,9 @@ class CatalogItem extends DataClass implements Insertable<CatalogItem> {
     int? purchaseCount,
     Value<DateTime?> lastPurchased = const Value.absent(),
     bool? deleted,
+    String? category,
+    bool? categoryManual,
+    int? categoryVersion,
     String? updated,
   }) => CatalogItem(
     id: id ?? this.id,
@@ -337,6 +436,9 @@ class CatalogItem extends DataClass implements Insertable<CatalogItem> {
         ? lastPurchased.value
         : this.lastPurchased,
     deleted: deleted ?? this.deleted,
+    category: category ?? this.category,
+    categoryManual: categoryManual ?? this.categoryManual,
+    categoryVersion: categoryVersion ?? this.categoryVersion,
     updated: updated ?? this.updated,
   );
   CatalogItem copyWithCompanion(CatalogItemsCompanion data) {
@@ -354,6 +456,13 @@ class CatalogItem extends DataClass implements Insertable<CatalogItem> {
           ? data.lastPurchased.value
           : this.lastPurchased,
       deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      category: data.category.present ? data.category.value : this.category,
+      categoryManual: data.categoryManual.present
+          ? data.categoryManual.value
+          : this.categoryManual,
+      categoryVersion: data.categoryVersion.present
+          ? data.categoryVersion.value
+          : this.categoryVersion,
       updated: data.updated.present ? data.updated.value : this.updated,
     );
   }
@@ -368,6 +477,9 @@ class CatalogItem extends DataClass implements Insertable<CatalogItem> {
           ..write('purchaseCount: $purchaseCount, ')
           ..write('lastPurchased: $lastPurchased, ')
           ..write('deleted: $deleted, ')
+          ..write('category: $category, ')
+          ..write('categoryManual: $categoryManual, ')
+          ..write('categoryVersion: $categoryVersion, ')
           ..write('updated: $updated')
           ..write(')'))
         .toString();
@@ -382,6 +494,9 @@ class CatalogItem extends DataClass implements Insertable<CatalogItem> {
     purchaseCount,
     lastPurchased,
     deleted,
+    category,
+    categoryManual,
+    categoryVersion,
     updated,
   );
   @override
@@ -395,6 +510,9 @@ class CatalogItem extends DataClass implements Insertable<CatalogItem> {
           other.purchaseCount == this.purchaseCount &&
           other.lastPurchased == this.lastPurchased &&
           other.deleted == this.deleted &&
+          other.category == this.category &&
+          other.categoryManual == this.categoryManual &&
+          other.categoryVersion == this.categoryVersion &&
           other.updated == this.updated);
 }
 
@@ -406,6 +524,9 @@ class CatalogItemsCompanion extends UpdateCompanion<CatalogItem> {
   final Value<int> purchaseCount;
   final Value<DateTime?> lastPurchased;
   final Value<bool> deleted;
+  final Value<String> category;
+  final Value<bool> categoryManual;
+  final Value<int> categoryVersion;
   final Value<String> updated;
   final Value<int> rowid;
   const CatalogItemsCompanion({
@@ -416,6 +537,9 @@ class CatalogItemsCompanion extends UpdateCompanion<CatalogItem> {
     this.purchaseCount = const Value.absent(),
     this.lastPurchased = const Value.absent(),
     this.deleted = const Value.absent(),
+    this.category = const Value.absent(),
+    this.categoryManual = const Value.absent(),
+    this.categoryVersion = const Value.absent(),
     this.updated = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -427,6 +551,9 @@ class CatalogItemsCompanion extends UpdateCompanion<CatalogItem> {
     this.purchaseCount = const Value.absent(),
     this.lastPurchased = const Value.absent(),
     this.deleted = const Value.absent(),
+    this.category = const Value.absent(),
+    this.categoryManual = const Value.absent(),
+    this.categoryVersion = const Value.absent(),
     this.updated = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -441,6 +568,9 @@ class CatalogItemsCompanion extends UpdateCompanion<CatalogItem> {
     Expression<int>? purchaseCount,
     Expression<DateTime>? lastPurchased,
     Expression<bool>? deleted,
+    Expression<String>? category,
+    Expression<bool>? categoryManual,
+    Expression<int>? categoryVersion,
     Expression<String>? updated,
     Expression<int>? rowid,
   }) {
@@ -452,6 +582,9 @@ class CatalogItemsCompanion extends UpdateCompanion<CatalogItem> {
       if (purchaseCount != null) 'purchase_count': purchaseCount,
       if (lastPurchased != null) 'last_purchased': lastPurchased,
       if (deleted != null) 'deleted': deleted,
+      if (category != null) 'category': category,
+      if (categoryManual != null) 'category_manual': categoryManual,
+      if (categoryVersion != null) 'category_version': categoryVersion,
       if (updated != null) 'updated': updated,
       if (rowid != null) 'rowid': rowid,
     });
@@ -465,6 +598,9 @@ class CatalogItemsCompanion extends UpdateCompanion<CatalogItem> {
     Value<int>? purchaseCount,
     Value<DateTime?>? lastPurchased,
     Value<bool>? deleted,
+    Value<String>? category,
+    Value<bool>? categoryManual,
+    Value<int>? categoryVersion,
     Value<String>? updated,
     Value<int>? rowid,
   }) {
@@ -476,6 +612,9 @@ class CatalogItemsCompanion extends UpdateCompanion<CatalogItem> {
       purchaseCount: purchaseCount ?? this.purchaseCount,
       lastPurchased: lastPurchased ?? this.lastPurchased,
       deleted: deleted ?? this.deleted,
+      category: category ?? this.category,
+      categoryManual: categoryManual ?? this.categoryManual,
+      categoryVersion: categoryVersion ?? this.categoryVersion,
       updated: updated ?? this.updated,
       rowid: rowid ?? this.rowid,
     );
@@ -505,6 +644,15 @@ class CatalogItemsCompanion extends UpdateCompanion<CatalogItem> {
     if (deleted.present) {
       map['deleted'] = Variable<bool>(deleted.value);
     }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (categoryManual.present) {
+      map['category_manual'] = Variable<bool>(categoryManual.value);
+    }
+    if (categoryVersion.present) {
+      map['category_version'] = Variable<int>(categoryVersion.value);
+    }
     if (updated.present) {
       map['updated'] = Variable<String>(updated.value);
     }
@@ -524,6 +672,9 @@ class CatalogItemsCompanion extends UpdateCompanion<CatalogItem> {
           ..write('purchaseCount: $purchaseCount, ')
           ..write('lastPurchased: $lastPurchased, ')
           ..write('deleted: $deleted, ')
+          ..write('category: $category, ')
+          ..write('categoryManual: $categoryManual, ')
+          ..write('categoryVersion: $categoryVersion, ')
           ..write('updated: $updated, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -2048,6 +2199,602 @@ class MetaCompanion extends UpdateCompanion<MetaData> {
   }
 }
 
+class $CategoriesTable extends Categories
+    with TableInfo<$CategoriesTable, Category> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CategoriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _householdMeta = const VerificationMeta(
+    'household',
+  );
+  @override
+  late final GeneratedColumn<String> household = GeneratedColumn<String>(
+    'household',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _isDefaultMeta = const VerificationMeta(
+    'isDefault',
+  );
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+    'is_default',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_default" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _iconMeta = const VerificationMeta('icon');
+  @override
+  late final GeneratedColumn<String> icon = GeneratedColumn<String>(
+    'icon',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('category'),
+  );
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<String> color = GeneratedColumn<String>(
+    'color',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta(
+    'deleted',
+  );
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _updatedMeta = const VerificationMeta(
+    'updated',
+  );
+  @override
+  late final GeneratedColumn<String> updated = GeneratedColumn<String>(
+    'updated',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    household,
+    key,
+    name,
+    isDefault,
+    sortOrder,
+    icon,
+    color,
+    deleted,
+    updated,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'categories';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Category> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('household')) {
+      context.handle(
+        _householdMeta,
+        household.isAcceptableOrUnknown(data['household']!, _householdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_householdMeta);
+    }
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(
+        _isDefaultMeta,
+        isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('icon')) {
+      context.handle(
+        _iconMeta,
+        icon.isAcceptableOrUnknown(data['icon']!, _iconMeta),
+      );
+    }
+    if (data.containsKey('color')) {
+      context.handle(
+        _colorMeta,
+        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
+      );
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(
+        _deletedMeta,
+        deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta),
+      );
+    }
+    if (data.containsKey('updated')) {
+      context.handle(
+        _updatedMeta,
+        updated.isAcceptableOrUnknown(data['updated']!, _updatedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {household, key},
+  ];
+  @override
+  Category map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Category(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      household: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}household'],
+      )!,
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      isDefault: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_default'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      icon: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon'],
+      )!,
+      color: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}color'],
+      )!,
+      deleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}deleted'],
+      )!,
+      updated: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated'],
+      )!,
+    );
+  }
+
+  @override
+  $CategoriesTable createAlias(String alias) {
+    return $CategoriesTable(attachedDatabase, alias);
+  }
+}
+
+class Category extends DataClass implements Insertable<Category> {
+  final String id;
+  final String household;
+  final String key;
+  final String name;
+  final bool isDefault;
+  final int sortOrder;
+  final String icon;
+  final String color;
+  final bool deleted;
+  final String updated;
+  const Category({
+    required this.id,
+    required this.household,
+    required this.key,
+    required this.name,
+    required this.isDefault,
+    required this.sortOrder,
+    required this.icon,
+    required this.color,
+    required this.deleted,
+    required this.updated,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['household'] = Variable<String>(household);
+    map['key'] = Variable<String>(key);
+    map['name'] = Variable<String>(name);
+    map['is_default'] = Variable<bool>(isDefault);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['icon'] = Variable<String>(icon);
+    map['color'] = Variable<String>(color);
+    map['deleted'] = Variable<bool>(deleted);
+    map['updated'] = Variable<String>(updated);
+    return map;
+  }
+
+  CategoriesCompanion toCompanion(bool nullToAbsent) {
+    return CategoriesCompanion(
+      id: Value(id),
+      household: Value(household),
+      key: Value(key),
+      name: Value(name),
+      isDefault: Value(isDefault),
+      sortOrder: Value(sortOrder),
+      icon: Value(icon),
+      color: Value(color),
+      deleted: Value(deleted),
+      updated: Value(updated),
+    );
+  }
+
+  factory Category.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Category(
+      id: serializer.fromJson<String>(json['id']),
+      household: serializer.fromJson<String>(json['household']),
+      key: serializer.fromJson<String>(json['key']),
+      name: serializer.fromJson<String>(json['name']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      icon: serializer.fromJson<String>(json['icon']),
+      color: serializer.fromJson<String>(json['color']),
+      deleted: serializer.fromJson<bool>(json['deleted']),
+      updated: serializer.fromJson<String>(json['updated']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'household': serializer.toJson<String>(household),
+      'key': serializer.toJson<String>(key),
+      'name': serializer.toJson<String>(name),
+      'isDefault': serializer.toJson<bool>(isDefault),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'icon': serializer.toJson<String>(icon),
+      'color': serializer.toJson<String>(color),
+      'deleted': serializer.toJson<bool>(deleted),
+      'updated': serializer.toJson<String>(updated),
+    };
+  }
+
+  Category copyWith({
+    String? id,
+    String? household,
+    String? key,
+    String? name,
+    bool? isDefault,
+    int? sortOrder,
+    String? icon,
+    String? color,
+    bool? deleted,
+    String? updated,
+  }) => Category(
+    id: id ?? this.id,
+    household: household ?? this.household,
+    key: key ?? this.key,
+    name: name ?? this.name,
+    isDefault: isDefault ?? this.isDefault,
+    sortOrder: sortOrder ?? this.sortOrder,
+    icon: icon ?? this.icon,
+    color: color ?? this.color,
+    deleted: deleted ?? this.deleted,
+    updated: updated ?? this.updated,
+  );
+  Category copyWithCompanion(CategoriesCompanion data) {
+    return Category(
+      id: data.id.present ? data.id.value : this.id,
+      household: data.household.present ? data.household.value : this.household,
+      key: data.key.present ? data.key.value : this.key,
+      name: data.name.present ? data.name.value : this.name,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      icon: data.icon.present ? data.icon.value : this.icon,
+      color: data.color.present ? data.color.value : this.color,
+      deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      updated: data.updated.present ? data.updated.value : this.updated,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Category(')
+          ..write('id: $id, ')
+          ..write('household: $household, ')
+          ..write('key: $key, ')
+          ..write('name: $name, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('icon: $icon, ')
+          ..write('color: $color, ')
+          ..write('deleted: $deleted, ')
+          ..write('updated: $updated')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    household,
+    key,
+    name,
+    isDefault,
+    sortOrder,
+    icon,
+    color,
+    deleted,
+    updated,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Category &&
+          other.id == this.id &&
+          other.household == this.household &&
+          other.key == this.key &&
+          other.name == this.name &&
+          other.isDefault == this.isDefault &&
+          other.sortOrder == this.sortOrder &&
+          other.icon == this.icon &&
+          other.color == this.color &&
+          other.deleted == this.deleted &&
+          other.updated == this.updated);
+}
+
+class CategoriesCompanion extends UpdateCompanion<Category> {
+  final Value<String> id;
+  final Value<String> household;
+  final Value<String> key;
+  final Value<String> name;
+  final Value<bool> isDefault;
+  final Value<int> sortOrder;
+  final Value<String> icon;
+  final Value<String> color;
+  final Value<bool> deleted;
+  final Value<String> updated;
+  final Value<int> rowid;
+  const CategoriesCompanion({
+    this.id = const Value.absent(),
+    this.household = const Value.absent(),
+    this.key = const Value.absent(),
+    this.name = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.icon = const Value.absent(),
+    this.color = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.updated = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CategoriesCompanion.insert({
+    required String id,
+    required String household,
+    required String key,
+    this.name = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.icon = const Value.absent(),
+    this.color = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.updated = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       household = Value(household),
+       key = Value(key);
+  static Insertable<Category> custom({
+    Expression<String>? id,
+    Expression<String>? household,
+    Expression<String>? key,
+    Expression<String>? name,
+    Expression<bool>? isDefault,
+    Expression<int>? sortOrder,
+    Expression<String>? icon,
+    Expression<String>? color,
+    Expression<bool>? deleted,
+    Expression<String>? updated,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (household != null) 'household': household,
+      if (key != null) 'key': key,
+      if (name != null) 'name': name,
+      if (isDefault != null) 'is_default': isDefault,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (icon != null) 'icon': icon,
+      if (color != null) 'color': color,
+      if (deleted != null) 'deleted': deleted,
+      if (updated != null) 'updated': updated,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CategoriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? household,
+    Value<String>? key,
+    Value<String>? name,
+    Value<bool>? isDefault,
+    Value<int>? sortOrder,
+    Value<String>? icon,
+    Value<String>? color,
+    Value<bool>? deleted,
+    Value<String>? updated,
+    Value<int>? rowid,
+  }) {
+    return CategoriesCompanion(
+      id: id ?? this.id,
+      household: household ?? this.household,
+      key: key ?? this.key,
+      name: name ?? this.name,
+      isDefault: isDefault ?? this.isDefault,
+      sortOrder: sortOrder ?? this.sortOrder,
+      icon: icon ?? this.icon,
+      color: color ?? this.color,
+      deleted: deleted ?? this.deleted,
+      updated: updated ?? this.updated,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (household.present) {
+      map['household'] = Variable<String>(household.value);
+    }
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (icon.present) {
+      map['icon'] = Variable<String>(icon.value);
+    }
+    if (color.present) {
+      map['color'] = Variable<String>(color.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (updated.present) {
+      map['updated'] = Variable<String>(updated.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CategoriesCompanion(')
+          ..write('id: $id, ')
+          ..write('household: $household, ')
+          ..write('key: $key, ')
+          ..write('name: $name, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('icon: $icon, ')
+          ..write('color: $color, ')
+          ..write('deleted: $deleted, ')
+          ..write('updated: $updated, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2056,6 +2803,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MembersTable members = $MembersTable(this);
   late final $OutboxTable outbox = $OutboxTable(this);
   late final $MetaTable meta = $MetaTable(this);
+  late final $CategoriesTable categories = $CategoriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2066,6 +2814,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     members,
     outbox,
     meta,
+    categories,
   ];
 }
 
@@ -2078,6 +2827,9 @@ typedef $$CatalogItemsTableCreateCompanionBuilder =
       Value<int> purchaseCount,
       Value<DateTime?> lastPurchased,
       Value<bool> deleted,
+      Value<String> category,
+      Value<bool> categoryManual,
+      Value<int> categoryVersion,
       Value<String> updated,
       Value<int> rowid,
     });
@@ -2090,6 +2842,9 @@ typedef $$CatalogItemsTableUpdateCompanionBuilder =
       Value<int> purchaseCount,
       Value<DateTime?> lastPurchased,
       Value<bool> deleted,
+      Value<String> category,
+      Value<bool> categoryManual,
+      Value<int> categoryVersion,
       Value<String> updated,
       Value<int> rowid,
     });
@@ -2135,6 +2890,21 @@ class $$CatalogItemsTableFilterComposer
 
   ColumnFilters<bool> get deleted => $composableBuilder(
     column: $table.deleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get categoryManual => $composableBuilder(
+    column: $table.categoryManual,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get categoryVersion => $composableBuilder(
+    column: $table.categoryVersion,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2188,6 +2958,21 @@ class $$CatalogItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get categoryManual => $composableBuilder(
+    column: $table.categoryManual,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get categoryVersion => $composableBuilder(
+    column: $table.categoryVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get updated => $composableBuilder(
     column: $table.updated,
     builder: (column) => ColumnOrderings(column),
@@ -2229,6 +3014,19 @@ class $$CatalogItemsTableAnnotationComposer
 
   GeneratedColumn<bool> get deleted =>
       $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<bool> get categoryManual => $composableBuilder(
+    column: $table.categoryManual,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get categoryVersion => $composableBuilder(
+    column: $table.categoryVersion,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get updated =>
       $composableBuilder(column: $table.updated, builder: (column) => column);
@@ -2272,6 +3070,9 @@ class $$CatalogItemsTableTableManager
                 Value<int> purchaseCount = const Value.absent(),
                 Value<DateTime?> lastPurchased = const Value.absent(),
                 Value<bool> deleted = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<bool> categoryManual = const Value.absent(),
+                Value<int> categoryVersion = const Value.absent(),
                 Value<String> updated = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CatalogItemsCompanion(
@@ -2282,6 +3083,9 @@ class $$CatalogItemsTableTableManager
                 purchaseCount: purchaseCount,
                 lastPurchased: lastPurchased,
                 deleted: deleted,
+                category: category,
+                categoryManual: categoryManual,
+                categoryVersion: categoryVersion,
                 updated: updated,
                 rowid: rowid,
               ),
@@ -2294,6 +3098,9 @@ class $$CatalogItemsTableTableManager
                 Value<int> purchaseCount = const Value.absent(),
                 Value<DateTime?> lastPurchased = const Value.absent(),
                 Value<bool> deleted = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<bool> categoryManual = const Value.absent(),
+                Value<int> categoryVersion = const Value.absent(),
                 Value<String> updated = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CatalogItemsCompanion.insert(
@@ -2304,6 +3111,9 @@ class $$CatalogItemsTableTableManager
                 purchaseCount: purchaseCount,
                 lastPurchased: lastPurchased,
                 deleted: deleted,
+                category: category,
+                categoryManual: categoryManual,
+                categoryVersion: categoryVersion,
                 updated: updated,
                 rowid: rowid,
               ),
@@ -3174,6 +3984,302 @@ typedef $$MetaTableProcessedTableManager =
       MetaData,
       PrefetchHooks Function()
     >;
+typedef $$CategoriesTableCreateCompanionBuilder = CategoriesCompanion Function({
+  required String id,
+  required String household,
+  required String key,
+  Value<String> name,
+  Value<bool> isDefault,
+  Value<int> sortOrder,
+  Value<String> icon,
+  Value<String> color,
+  Value<bool> deleted,
+  Value<String> updated,
+  Value<int> rowid,
+});
+typedef $$CategoriesTableUpdateCompanionBuilder = CategoriesCompanion Function({
+  Value<String> id,
+  Value<String> household,
+  Value<String> key,
+  Value<String> name,
+  Value<bool> isDefault,
+  Value<int> sortOrder,
+  Value<String> icon,
+  Value<String> color,
+  Value<bool> deleted,
+  Value<String> updated,
+  Value<int> rowid,
+});
+
+class $$CategoriesTableFilterComposer
+    extends Composer<_$AppDatabase, $CategoriesTable> {
+  $$CategoriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get household => $composableBuilder(
+    column: $table.household,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get icon => $composableBuilder(
+    column: $table.icon,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updated => $composableBuilder(
+    column: $table.updated,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CategoriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CategoriesTable> {
+  $$CategoriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get household => $composableBuilder(
+    column: $table.household,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get icon => $composableBuilder(
+    column: $table.icon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updated => $composableBuilder(
+    column: $table.updated,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CategoriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CategoriesTable> {
+  $$CategoriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get household =>
+      $composableBuilder(column: $table.household, builder: (column) => column);
+
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<String> get icon =>
+      $composableBuilder(column: $table.icon, builder: (column) => column);
+
+  GeneratedColumn<String> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<String> get updated =>
+      $composableBuilder(column: $table.updated, builder: (column) => column);
+}
+
+class $$CategoriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CategoriesTable,
+          Category,
+          $$CategoriesTableFilterComposer,
+          $$CategoriesTableOrderingComposer,
+          $$CategoriesTableAnnotationComposer,
+          $$CategoriesTableCreateCompanionBuilder,
+          $$CategoriesTableUpdateCompanionBuilder,
+          (Category, BaseReferences<_$AppDatabase, $CategoriesTable, Category>),
+          Category,
+          PrefetchHooks Function()
+        > {
+  $$CategoriesTableTableManager(_$AppDatabase db, $CategoriesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CategoriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CategoriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CategoriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> household = const Value.absent(),
+                Value<String> key = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String> icon = const Value.absent(),
+                Value<String> color = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<String> updated = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CategoriesCompanion(
+                id: id,
+                household: household,
+                key: key,
+                name: name,
+                isDefault: isDefault,
+                sortOrder: sortOrder,
+                icon: icon,
+                color: color,
+                deleted: deleted,
+                updated: updated,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String household,
+                required String key,
+                Value<String> name = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<String> icon = const Value.absent(),
+                Value<String> color = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<String> updated = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CategoriesCompanion.insert(
+                id: id,
+                household: household,
+                key: key,
+                name: name,
+                isDefault: isDefault,
+                sortOrder: sortOrder,
+                icon: icon,
+                color: color,
+                deleted: deleted,
+                updated: updated,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CategoriesTable, Category>(table),
+                  BaseReferences<_$AppDatabase, $CategoriesTable, Category>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CategoriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CategoriesTable,
+      Category,
+      $$CategoriesTableFilterComposer,
+      $$CategoriesTableOrderingComposer,
+      $$CategoriesTableAnnotationComposer,
+      $$CategoriesTableCreateCompanionBuilder,
+      $$CategoriesTableUpdateCompanionBuilder,
+      (Category, BaseReferences<_$AppDatabase, $CategoriesTable, Category>),
+      Category,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3187,4 +4293,6 @@ class $AppDatabaseManager {
   $$OutboxTableTableManager get outbox =>
       $$OutboxTableTableManager(_db, _db.outbox);
   $$MetaTableTableManager get meta => $$MetaTableTableManager(_db, _db.meta);
+  $$CategoriesTableTableManager get categories =>
+      $$CategoriesTableTableManager(_db, _db.categories);
 }

@@ -56,6 +56,9 @@ docker compose exec pocketbase /pb/pocketbase superuser upsert admin@example.com
 
 ### App bauen
 
+Kategoriesystem (ab 1.1.0): Migration, Offline-Verhalten, sichere Update-Reihenfolge,
+ARM64-Build und Rollback stehen in [docs/CATEGORIES.md](docs/CATEGORIES.md).
+
 ```sh
 cd app
 ../tools/fetch-sqlite.sh        # SQLite-Quellcode (wird mitkompiliert)

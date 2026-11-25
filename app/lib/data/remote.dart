@@ -83,7 +83,7 @@ class PocketBaseRemote implements SyncRemote {
   /// Live updates while the app is open. Returns an unsubscribe function.
   Future<Future<void> Function()> subscribe(void Function(RemoteEvent) onEvent) async {
     final unsubs = <UnsubscribeFunc>[];
-    for (final c in const ['list_entries', 'catalog_items', 'users']) {
+    for (final c in const ['categories', 'list_entries', 'catalog_items', 'users']) {
       unsubs.add(await pb.collection(c).subscribe('*', (e) {
         final record = e.record;
         if (record == null) return;

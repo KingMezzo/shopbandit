@@ -6,3 +6,4 @@ key.properties
 # build output
 build/
 .dart_tool/
+.test-artifacts/

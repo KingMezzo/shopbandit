@@ -10,6 +10,103 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get category => 'Category';
+
+  @override
+  String get categoryFruitVegetables => 'Fruit & Vegetables';
+
+  @override
+  String get categoryBakery => 'Bread & Bakery';
+
+  @override
+  String get categoryDairyEggs => 'Dairy & Eggs';
+
+  @override
+  String get categoryMeat => 'Meat & Deli';
+
+  @override
+  String get categoryFish => 'Fish & Seafood';
+
+  @override
+  String get categoryFrozen => 'Frozen Food';
+
+  @override
+  String get categoryPantry => 'Pasta, Rice & Pantry';
+
+  @override
+  String get categoryCanned => 'Canned & Ready Meals';
+
+  @override
+  String get categoryDrinks => 'Beverages';
+
+  @override
+  String get categorySnacks => 'Sweets & Snacks';
+
+  @override
+  String get categoryHousehold => 'Household & Cleaning';
+
+  @override
+  String get categoryOther => 'Other';
+
+  @override
+  String get manageCategories => 'Manage categories';
+
+  @override
+  String get manageCategoriesHint => 'Rename, reorder and add categories';
+
+  @override
+  String get categoriesHint =>
+      'Tap to rename. Hold to reorder or use the menu. Changes apply to the whole household, including offline.';
+
+  @override
+  String get createCategory => 'Create category';
+
+  @override
+  String get renameCategory => 'Rename category';
+
+  @override
+  String get categoryName => 'Category name';
+
+  @override
+  String get resetCategoryName => 'Reset to default name';
+
+  @override
+  String get defaultCategory => 'Default category';
+
+  @override
+  String get categoryActions => 'Edit category';
+
+  @override
+  String get moveUp => 'Move up';
+
+  @override
+  String get moveDown => 'Move down';
+
+  @override
+  String get deleteCategoryMessage =>
+      'All assigned products will be safely moved to Other. The category will be deleted for the entire household.';
+
+  @override
+  String get categoryAppliesToProduct =>
+      'The category is saved immediately and applies to future purchases. The quantity is applied with Save.';
+
+  @override
+  String get errorCategoryUnavailable =>
+      'This category was changed or deleted. Please choose an available category.';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get searchProducts => 'Search products';
+
+  @override
+  String get allCategories => 'All categories';
+
+  @override
+  String get noProductsFound => 'No matching products found.';
+
+  @override
   String get appTitle => 'ShopBandit';
 
   @override

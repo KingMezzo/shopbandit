@@ -15,6 +15,8 @@ extension L10nContext on BuildContext {
 
 /// User facing text for an API error.
 String errorText(AppLocalizations t, Object error) {
+  if (error is StateError && error.message.toString().startsWith('category_')) return t.errorCategoryUnavailable;
+  if (error is ArgumentError) return t.nameRequired;
   if (error is ClientException) {
     if (error.statusCode == 0) return t.errorOffline;
     final msg = error.response['message']?.toString() ?? '';

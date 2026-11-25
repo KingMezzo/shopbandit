@@ -27,9 +27,19 @@ jobs:
           cache: true
       - run: ../tools/fetch-sqlite.sh
       - run: flutter pub get
+      - run: python3 ../tools/generate-categories.py --check
       - run: dart run build_runner build -d
       - run: flutter analyze --fatal-infos
       - run: flutter test
+      - name: Real PocketBase two-device sync and realtime
+        run: |
+          docker build -t shopbandit-server:app-test ../server
+          docker run -d --name pb-app-test -p 127.0.0.1:18090:8090 shopbandit-server:app-test
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:18090/api/health && break; sleep 1; done
+          flutter test test/pocketbase_sync_integration_test.dart --dart-define=SHOPBANDIT_TEST_URL=http://127.0.0.1:18090
+      - name: App integration server logs
+        if: failure()
+        run: docker logs pb-app-test
       - run: flutter build apk --debug
 
   server:
@@ -44,6 +54,10 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8090/api/health && break; sleep 1; done
       - name: Integration smoke test
         run: server/scripts/smoke-test.sh http://127.0.0.1:8090
+      - name: Category API and household isolation tests
+        run: python3 server/scripts/category-test.py http://127.0.0.1:8090
+      - name: Filled v1 database copy upgrade and restart
+        run: python3 server/scripts/test-category-upgrade.py --image shopbandit-server:ci
       - name: Logs
         if: failure()
         run: docker logs pb
