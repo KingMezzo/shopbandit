@@ -20,6 +20,11 @@ final catalogProvider = StreamProvider<List<CatalogItem>>((ref) {
   return repo?.watchCatalog() ?? const Stream.empty();
 });
 
+final categoriesProvider = StreamProvider<List<Category>>((ref) {
+  final repo = ref.watch(sessionProvider.select((s) => s.repo));
+  return repo?.watchCategories() ?? const Stream.empty();
+});
+
 final membersProvider = StreamProvider<List<Member>>((ref) {
   final repo = ref.watch(sessionProvider.select((s) => s.repo));
   return repo?.watchMembers() ?? const Stream.empty();

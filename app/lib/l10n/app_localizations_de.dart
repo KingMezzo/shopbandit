@@ -10,6 +10,104 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get category => 'Kategorie';
+
+  @override
+  String get categoryFruitVegetables => 'Obst & Gemüse';
+
+  @override
+  String get categoryBakery => 'Brot & Backwaren';
+
+  @override
+  String get categoryDairyEggs => 'Milchprodukte & Eier';
+
+  @override
+  String get categoryMeat => 'Fleisch & Wurst';
+
+  @override
+  String get categoryFish => 'Fisch & Meeresfrüchte';
+
+  @override
+  String get categoryFrozen => 'Tiefkühlprodukte';
+
+  @override
+  String get categoryPantry => 'Nudeln, Reis & Vorräte';
+
+  @override
+  String get categoryCanned => 'Konserven & Fertiggerichte';
+
+  @override
+  String get categoryDrinks => 'Getränke';
+
+  @override
+  String get categorySnacks => 'Süßigkeiten & Snacks';
+
+  @override
+  String get categoryHousehold => 'Haushalt & Reinigung';
+
+  @override
+  String get categoryOther => 'Sonstiges';
+
+  @override
+  String get manageCategories => 'Kategorien verwalten';
+
+  @override
+  String get manageCategoriesHint =>
+      'Kategorien benennen, sortieren und ergänzen';
+
+  @override
+  String get categoriesHint =>
+      'Zum Umbenennen antippen. Zum Sortieren gedrückt halten oder das Menü verwenden. Änderungen gelten für den ganzen Haushalt, auch offline.';
+
+  @override
+  String get createCategory => 'Kategorie erstellen';
+
+  @override
+  String get renameCategory => 'Kategorie umbenennen';
+
+  @override
+  String get categoryName => 'Kategoriename';
+
+  @override
+  String get resetCategoryName => 'Namen auf Standard zurücksetzen';
+
+  @override
+  String get defaultCategory => 'Standardkategorie';
+
+  @override
+  String get categoryActions => 'Kategorie bearbeiten';
+
+  @override
+  String get moveUp => 'Nach oben';
+
+  @override
+  String get moveDown => 'Nach unten';
+
+  @override
+  String get deleteCategoryMessage =>
+      'Alle zugeordneten Produkte werden sicher nach „Sonstiges“ verschoben. Die Kategorie wird für den ganzen Haushalt gelöscht.';
+
+  @override
+  String get categoryAppliesToProduct =>
+      'Die Kategorie wird sofort gespeichert und gilt auch für zukünftige Einkäufe. Die Menge wird mit „Speichern“ übernommen.';
+
+  @override
+  String get errorCategoryUnavailable =>
+      'Diese Kategorie wurde geändert oder gelöscht. Bitte eine verfügbare Kategorie wählen.';
+
+  @override
+  String get close => 'Schließen';
+
+  @override
+  String get searchProducts => 'Artikel suchen';
+
+  @override
+  String get allCategories => 'Alle Kategorien';
+
+  @override
+  String get noProductsFound => 'Keine passenden Artikel gefunden.';
+
+  @override
   String get appTitle => 'ShopBandit';
 
   @override
@@ -274,7 +372,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get manageCatalog => 'Artikelkatalog';
 
   @override
-  String get manageCatalogHint => 'Gespeicherte Artikel ansehen und löschen';
+  String get manageCatalogHint =>
+      'Artikel suchen, Kategorien ändern und Artikel löschen';
 
   @override
   String markBought(String name) {

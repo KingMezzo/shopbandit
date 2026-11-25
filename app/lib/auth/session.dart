@@ -153,6 +153,7 @@ class AppSession extends ChangeNotifier {
     final remote = PocketBaseRemote(client);
     sync = SyncService(db, remote);
     repo = ShopRepository(db, sync!, household: h, userId: userId);
+    await repo!.initializeCategories();
     notifyListeners();
 
     unawaited(_loadHousehold());

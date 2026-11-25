@@ -180,6 +180,7 @@ void main() {
           lastPurchased: now.subtract(Duration(days: daysAgo)),
           deleted: false,
           updated: '',
+          category: '', categoryManual: false, categoryVersion: 0,
         );
     final result = ShopRepository.frequent(
       [item('a', 10, 100), item('b', 3, 1), item('c', 5, 5), item('d', 0, 0), item('e', 9, 1)],

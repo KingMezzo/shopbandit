@@ -15,6 +15,7 @@ import 'ui/list_screen.dart';
 import 'ui/scan_screen.dart';
 import 'ui/server_screen.dart';
 import 'ui/settings_screen.dart';
+import 'ui/categories_screen.dart';
 import 'ui/theme.dart';
 
 const _authRoutes = {'/server', '/login', '/register', '/forgot'};
@@ -40,6 +41,7 @@ GoRouter buildRouter(AppSession session) => GoRouter(
           ]),
           GoRoute(path: 'settings', builder: (_, _) => const SettingsScreen(), routes: [
             GoRoute(path: 'catalog', builder: (_, _) => const CatalogScreen()),
+            GoRoute(path: 'categories', builder: (_, _) => const CategoriesScreen()),
           ]),
         ]),
       ],

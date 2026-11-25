@@ -1,0 +1,3 @@
+Household categories: automatic assignment, grouped shopping lists and custom categories.
+Change categories directly on products and in the searchable catalog, including offline.
+German and English names, safe synchronization and preserved product data.

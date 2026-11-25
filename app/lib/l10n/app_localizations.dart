@@ -98,6 +98,192 @@ abstract class AppLocalizations {
     Locale('en'),
   ];
 
+  /// No description provided for @category.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie'**
+  String get category;
+
+  /// No description provided for @categoryFruitVegetables.
+  ///
+  /// In de, this message translates to:
+  /// **'Obst & Gemüse'**
+  String get categoryFruitVegetables;
+
+  /// No description provided for @categoryBakery.
+  ///
+  /// In de, this message translates to:
+  /// **'Brot & Backwaren'**
+  String get categoryBakery;
+
+  /// No description provided for @categoryDairyEggs.
+  ///
+  /// In de, this message translates to:
+  /// **'Milchprodukte & Eier'**
+  String get categoryDairyEggs;
+
+  /// No description provided for @categoryMeat.
+  ///
+  /// In de, this message translates to:
+  /// **'Fleisch & Wurst'**
+  String get categoryMeat;
+
+  /// No description provided for @categoryFish.
+  ///
+  /// In de, this message translates to:
+  /// **'Fisch & Meeresfrüchte'**
+  String get categoryFish;
+
+  /// No description provided for @categoryFrozen.
+  ///
+  /// In de, this message translates to:
+  /// **'Tiefkühlprodukte'**
+  String get categoryFrozen;
+
+  /// No description provided for @categoryPantry.
+  ///
+  /// In de, this message translates to:
+  /// **'Nudeln, Reis & Vorräte'**
+  String get categoryPantry;
+
+  /// No description provided for @categoryCanned.
+  ///
+  /// In de, this message translates to:
+  /// **'Konserven & Fertiggerichte'**
+  String get categoryCanned;
+
+  /// No description provided for @categoryDrinks.
+  ///
+  /// In de, this message translates to:
+  /// **'Getränke'**
+  String get categoryDrinks;
+
+  /// No description provided for @categorySnacks.
+  ///
+  /// In de, this message translates to:
+  /// **'Süßigkeiten & Snacks'**
+  String get categorySnacks;
+
+  /// No description provided for @categoryHousehold.
+  ///
+  /// In de, this message translates to:
+  /// **'Haushalt & Reinigung'**
+  String get categoryHousehold;
+
+  /// No description provided for @categoryOther.
+  ///
+  /// In de, this message translates to:
+  /// **'Sonstiges'**
+  String get categoryOther;
+
+  /// No description provided for @manageCategories.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorien verwalten'**
+  String get manageCategories;
+
+  /// No description provided for @manageCategoriesHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorien benennen, sortieren und ergänzen'**
+  String get manageCategoriesHint;
+
+  /// No description provided for @categoriesHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Zum Umbenennen antippen. Zum Sortieren gedrückt halten oder das Menü verwenden. Änderungen gelten für den ganzen Haushalt, auch offline.'**
+  String get categoriesHint;
+
+  /// No description provided for @createCategory.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie erstellen'**
+  String get createCategory;
+
+  /// No description provided for @renameCategory.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie umbenennen'**
+  String get renameCategory;
+
+  /// No description provided for @categoryName.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategoriename'**
+  String get categoryName;
+
+  /// No description provided for @resetCategoryName.
+  ///
+  /// In de, this message translates to:
+  /// **'Namen auf Standard zurücksetzen'**
+  String get resetCategoryName;
+
+  /// No description provided for @defaultCategory.
+  ///
+  /// In de, this message translates to:
+  /// **'Standardkategorie'**
+  String get defaultCategory;
+
+  /// No description provided for @categoryActions.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie bearbeiten'**
+  String get categoryActions;
+
+  /// No description provided for @moveUp.
+  ///
+  /// In de, this message translates to:
+  /// **'Nach oben'**
+  String get moveUp;
+
+  /// No description provided for @moveDown.
+  ///
+  /// In de, this message translates to:
+  /// **'Nach unten'**
+  String get moveDown;
+
+  /// No description provided for @deleteCategoryMessage.
+  ///
+  /// In de, this message translates to:
+  /// **'Alle zugeordneten Produkte werden sicher nach „Sonstiges“ verschoben. Die Kategorie wird für den ganzen Haushalt gelöscht.'**
+  String get deleteCategoryMessage;
+
+  /// No description provided for @categoryAppliesToProduct.
+  ///
+  /// In de, this message translates to:
+  /// **'Die Kategorie wird sofort gespeichert und gilt auch für zukünftige Einkäufe. Die Menge wird mit „Speichern“ übernommen.'**
+  String get categoryAppliesToProduct;
+
+  /// No description provided for @errorCategoryUnavailable.
+  ///
+  /// In de, this message translates to:
+  /// **'Diese Kategorie wurde geändert oder gelöscht. Bitte eine verfügbare Kategorie wählen.'**
+  String get errorCategoryUnavailable;
+
+  /// No description provided for @close.
+  ///
+  /// In de, this message translates to:
+  /// **'Schließen'**
+  String get close;
+
+  /// No description provided for @searchProducts.
+  ///
+  /// In de, this message translates to:
+  /// **'Artikel suchen'**
+  String get searchProducts;
+
+  /// No description provided for @allCategories.
+  ///
+  /// In de, this message translates to:
+  /// **'Alle Kategorien'**
+  String get allCategories;
+
+  /// No description provided for @noProductsFound.
+  ///
+  /// In de, this message translates to:
+  /// **'Keine passenden Artikel gefunden.'**
+  String get noProductsFound;
+
   /// No description provided for @appTitle.
   ///
   /// In de, this message translates to:
@@ -527,7 +713,7 @@ abstract class AppLocalizations {
   /// No description provided for @manageCatalogHint.
   ///
   /// In de, this message translates to:
-  /// **'Gespeicherte Artikel ansehen und löschen'**
+  /// **'Artikel suchen, Kategorien ändern und Artikel löschen'**
   String get manageCatalogHint;
 
   /// No description provided for @markBought.
